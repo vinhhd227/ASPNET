@@ -7,11 +7,11 @@ builder.WebHost.UseUrls("http://localhost:5000");
 // var testoptions = builder.Configuration.GetSection ("TestOptions");
 
 // Thêm vào dòng lấy IServiceCollection
-// var services = builder.Services;
+var services = builder.Services;
 /* ============================================================
      Copy code cũ trong Startup.ConfigureServices vào đây, ví dụ
    =========================================================== */
-
+services.AddSingleton<SecondMiddleWare>();
 // services.AddControllersWithViews();
 // services.AddDistributedMemoryCache();
 // services.AddSession(cfg => {
@@ -30,10 +30,31 @@ var app = builder.Build();
 //     app.UseExceptionHandler("/Home/Error");
 //     app.UseHsts();
 // }
-
-app.UseStatusCodePages();
-app.UseStaticFiles();
 app.UseRouting();
+app.UseStaticFiles();
+
+app.UseFirstMiddleWare();
+app.UseSecondMiddleWare();
+app.UseEndpoints((endpoints) =>
+{
+    endpoints.MapGet("/product", async (c) => await c.Response.WriteAsync("Trang san pham"));
+    endpoints.MapGet("/home", async (c) => await c.Response.WriteAsync("Trang chu"));
+    endpoints.MapGet("/about", async (c) => await c.Response.WriteAsync("Trang san pham"));
+});
+
+// app.UseStatusCodePages();
+app.Map("/admin", (appAdmin) =>
+{
+    appAdmin.UseRouting();
+    appAdmin.UseEndpoints((endpoints) =>
+    {
+        endpoints.MapGet("/product", async (c) => await c.Response.WriteAsync("Trang quan ly san pham"));
+        endpoints.MapGet("/home", async (c) => await c.Response.WriteAsync("Trang chu admin"));
+        endpoints.MapGet("/user", async (c) => await c.Response.WriteAsync("Trang san quan ly user"));
+    });
+    appAdmin.Run(async (context) => await context.Response.WriteAsync("Terminal MiddleWare Admin"));
+});
+app.Run(async (context) => await context.Response.WriteAsync("Terminal MiddleWare"));
 // app.UseHttpsRedirection();
 
 // app.UseAuthorization();
@@ -41,51 +62,5 @@ app.UseRouting();
 // app.MapControllerRoute(
 //     name: "default",
 //     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.MapGet("/home", async (context) =>
-    {
-        string html = @"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset=""UTF-8"">
-                    <title>Trang web đầu tiên</title>
-                    <link rel=""stylesheet"" href=""/css/bootstrap.min.css"" />
-                    <script src=""/js/jquery.min.js""></script>
-                    <script src=""/js/popper.min.js""></script>
-                    <script src=""/js/bootstrap.min.js""></script>
-
-
-                </head>
-                <body>
-                    <nav class=""navbar navbar-expand-lg navbar-dark bg-danger"">
-                            <a class=""navbar-brand"" href=""#"">Brand-Logo</a>
-                            <button class=""navbar-toggler"" type=""button"" data-toggle=""collapse"" data-target=""#my-nav-bar"" aria-controls=""my-nav-bar"" aria-expanded=""false"" aria-label=""Toggle navigation"">
-                                    <span class=""navbar-toggler-icon""></span>
-                            </button>
-                            <div class=""collapse navbar-collapse"" id=""my-nav-bar"">
-                            <ul class=""navbar-nav"">
-                                <li class=""nav-item active"">
-                                    <a class=""nav-link"" href=""#"">Trang chủ</a>
-                                </li>
-                            
-                                <li class=""nav-item"">
-                                    <a class=""nav-link"" href=""#"">Học HTML</a>
-                                </li>
-                            
-                                <li class=""nav-item"">
-                                    <a class=""nav-link disabled"" href=""#"">Gửi bài</a>
-                                </li>
-                        </ul>
-                        </div>
-                    </nav> 
-                    <p class=""display-4 text-danger"">Đây là trang đã có Bootstrap</p>
-                </body>
-                </html>
-    ";
-        await context.Response.WriteAsync(html);
-    });
-app.MapGet("/about.html", () => "Trang thong tin");
-app.MapGet("/contact", () => "Trang lien he");
 
 app.Run();
